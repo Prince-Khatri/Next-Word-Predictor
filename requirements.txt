@@ -3,5 +3,7 @@ mlflow
 numpy
 pandas
 tensorflow
+PyYAML
+dill
 
 -e .
