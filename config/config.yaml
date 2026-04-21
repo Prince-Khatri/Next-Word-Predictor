@@ -1,0 +1,39 @@
+project:
+  name: "next_word_predictor"
+
+data:
+  raw_text_path: "data/wiki.train.tokens"
+  min_words_per_sentence: 5
+  train_split: 0.7
+  val_split: 0.1
+  test_split: 0.2
+  random_seed: 42
+
+model:
+  max_vocab: 20000
+  max_len: 30
+  embedding_dim: 128
+  lstm_units: 256
+  dropout_rate: 0.2
+  batch_size: 512
+  epochs: 10
+  early_stopping_patience: 3
+  learning_rate: 0.001
+
+inference:
+  top_k: 5
+  default_next_words: 5
+
+mlflow:
+  tracking_uri: ""
+  experiment_name: "next_word_predictor"
+
+artifacts:
+  root_dir: "artifacts"
+  processed_dir: "artifacts/processed"
+  train_sentences_path: "artifacts/processed/train_sentences.txt"
+  val_sentences_path: "artifacts/processed/val_sentences.txt"
+  test_sentences_path: "artifacts/processed/test_sentences.txt"
+  model_path: "artifacts/model/next_word_lstm.keras"
+  tokenizer_path: "artifacts/model/tokenizer.dill"
+  history_path: "artifacts/model/history.csv"
