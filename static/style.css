@@ -1,0 +1,61 @@
+body {
+    background-color: #e0e0e0;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+
+.container {
+    width: 800px;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+}
+
+.input-area {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border: 1px solid #ccc;
+}
+
+.text-input, #ghost-display {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    font-size: 16px;
+    font-family: monospace;
+    line-height: 1.5;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    background: transparent;
+}
+
+textarea {
+    z-index: 2;
+    border: none;
+    outline: none;
+    resize: none;
+}
+
+#ghost-display {
+    z-index: 1;
+    color: transparent;
+}
+
+.prediction-text {
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.footer-note {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}

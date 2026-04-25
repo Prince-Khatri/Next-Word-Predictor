@@ -6,7 +6,7 @@ from src.components.data_ingestion import DataIngestion
 from src.components.data_transformation import DataTransformation
 from src.components.model_trainer import ModelTrainer
 from src.logger import logging
-from src.utils import load_yaml
+from src.utils import load_yaml, ensure_parent_dir
 
 
 class TrainPipeline:
@@ -39,7 +39,14 @@ class TrainPipeline:
             mlflow.set_tracking_uri(mlflow_cfg["tracking_uri"])
         mlflow.set_experiment(mlflow_cfg["experiment_name"])
 
-        with mlflow.start_run():
+        with mlflow.start_run(run_name=self.config['mlflow']['run_name']):
+            mlflow.set_tags(
+                {
+                    'vocab_size': self.config['mlflow']['tags']['vocab_size'],
+                    'performance': self.config['mlflow']['tags']['performance'],
+                    'data_set_version': self.config['mlflow']['tags']['data_set']
+                }
+            )
             mlflow.log_params(
                 {
                     "vocab_size": token_data["total_words"],
@@ -71,9 +78,26 @@ class TrainPipeline:
                     "test_accuracy": eval_out["test_accuracy"],
                 }
             )
-            mlflow.log_artifact(self.config["artifacts"]["model_path"])
-            mlflow.log_artifact(self.config["artifacts"]["tokenizer_path"])
-            mlflow.log_artifact(self.config["artifacts"]["history_path"])
+
+            base_path = self.config["artifacts"]["model_dir"]
+            model_path = base_path + '/' + self.config["artifacts"]["model_file_name"]
+            history_path = base_path + '/' + self.config["artifacts"]["history_file_name"]
+
+            ensure_parent_dir(base_path)
+            mlflow.log_artifact(
+                model_path,
+                artifact_path="model"
+            )
+
+            mlflow.log_artifact(
+                self.config["artifacts"]["tokenizer_path"],
+                artifact_path="tokenizer"
+            )
+
+            mlflow.log_artifact(
+                history_path,
+                artifact_path="training"
+            )
 
             logging.info(
                 "Training complete. Loss=%.4f Accuracy=%.4f Perplexity=%.4f",

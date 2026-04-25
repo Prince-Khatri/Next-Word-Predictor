@@ -3,7 +3,9 @@ project:
 
 data:
   raw_text_path: "data/wiki.train.tokens"
-  min_words_per_sentence: 5
+  # raw_text_path: "data/faq.txt"
+
+  min_words_per_sentence: 3
   train_split: 0.7
   val_split: 0.1
   test_split: 0.2
@@ -16,17 +18,28 @@ model:
   lstm_units: 256
   dropout_rate: 0.2
   batch_size: 512
-  epochs: 10
+  epochs: 50
   early_stopping_patience: 3
   learning_rate: 0.001
+  resume_training: False
+
+
+data_transform:
+  use_tokenizer: False
 
 inference:
   top_k: 5
-  default_next_words: 5
+  default_next_words: 1
 
 mlflow:
-  tracking_uri: ""
+  tracking_uri: "http://127.0.0.1:5000/"
   experiment_name: "next_word_predictor"
+  run_name: "lstm_wiki_103"
+  tags:
+    vocab_size: '95%'
+    performance: 'baseline'
+    data_set: 'wiki-103'
+
 
 artifacts:
   root_dir: "artifacts"
@@ -34,6 +47,7 @@ artifacts:
   train_sentences_path: "artifacts/processed/train_sentences.txt"
   val_sentences_path: "artifacts/processed/val_sentences.txt"
   test_sentences_path: "artifacts/processed/test_sentences.txt"
-  model_path: "artifacts/model/next_word_lstm.keras"
+  model_dir: "artifacts/model/vocab_97"
+  model_file_name: "next_word_lstm.keras"
   tokenizer_path: "artifacts/model/tokenizer.dill"
-  history_path: "artifacts/model/history.csv"
+  history_file_name: "history.csv"

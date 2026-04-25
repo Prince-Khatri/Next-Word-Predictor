@@ -5,7 +5,9 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 
 from src.decorators import handle_exception
 from src.logger import logging
-from src.utils import load_yaml, save_object
+from src.utils import load_yaml, save_object, load_object
+
+import os
 
 
 class DataTransformation:
@@ -28,6 +30,28 @@ class DataTransformation:
         return [s.strip() for s in sentences if len(s.split()) >= min_words]
 
     @handle_exception
+    def get_tokenizer(
+        self,
+        train_sentences: List[str]
+    ) -> Tokenizer:
+        # if tokenizer exist and flag tells to use the same
+        use_tokenizer = self.config['data_transform'].get('use_tokenizer',False)
+        
+        tokenizer_path = self.artifacts_cfg["tokenizer_path"]
+        if use_tokenizer and os.path.exists(tokenizer_path):
+            logging.info('Loading previous tokenizer')
+            tokenizer = load_object(tokenizer_path)
+        else:
+            logging.info('Creating new tokenizer')
+            tokenizer = Tokenizer(
+                num_words=self.model_cfg["max_vocab"],
+                oov_token="<OOV>",
+            )
+            tokenizer.fit_on_texts(train_sentences)
+        
+        return tokenizer
+
+    @handle_exception
     def tokenize_data(
         self,
         train_sentences: List[str],
@@ -35,11 +59,8 @@ class DataTransformation:
         test_sentences: List[str],
     ) -> Dict:
         logging.info("Fitting tokenizer on train data.")
-        tokenizer = Tokenizer(
-            num_words=self.model_cfg["max_vocab"],
-            oov_token="<OOV>",
-        )
-        tokenizer.fit_on_texts(train_sentences)
+    
+        tokenizer = self.get_tokenizer(train_sentences=train_sentences)
 
         total_words = min(self.model_cfg["max_vocab"], len(tokenizer.word_index)) + 1
         train_seq = tokenizer.texts_to_sequences(train_sentences)

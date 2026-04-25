@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Prediction Notepad</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2>Notepad with Autocomplete</h2>
+    
+    <div class="input-area">
+        <div id="ghost-display" class="text-input"></div>
+        <textarea id="main-input" class="text-input" placeholder="Start typing here..."></textarea>
+    </div>
+
+    <p class="footer-note">
+        Press <b>Space</b> to get a hint. Press <b>Tab</b> to fill it in.
+    </p>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

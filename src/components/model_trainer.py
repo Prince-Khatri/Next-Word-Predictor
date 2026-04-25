@@ -2,6 +2,7 @@ import os
 from typing import Dict, List
 
 import numpy as np
+import math
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
@@ -11,7 +12,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 from src.decorators import handle_exception
 from src.logger import logging
-from src.utils import load_yaml
+from src.utils import load_yaml, ensure_parent_dir
 
 
 class ModelTrainer:
@@ -37,27 +38,42 @@ class ModelTrainer:
     def _count_samples(self, sequences: List[List[int]], max_len: int) -> int:
         return sum(max(len(seq) - max_len, 0) for seq in sequences)
 
-    def build_model(self, total_words: int) -> tf.keras.Model:
-        max_len = self.model_cfg["max_len"]
-        model = Sequential(
-            [
-                Embedding(total_words, self.model_cfg["embedding_dim"], input_length=max_len - 1),
-                LSTM(self.model_cfg["lstm_units"], return_sequences=True),
-                Dropout(self.model_cfg["dropout_rate"]),
-                LSTM(self.model_cfg["lstm_units"]),
-                Dense(total_words, activation="softmax"),
-            ]
-        )
+    def build_model(self, total_words: int, model_path: str) -> tf.keras.Model:
+        # if model exist and flag tells to continue traning continue traning
+        resume = self.config['model'].get('resume_training', False)
+        if resume and os.path.exists(model_path) :
+            logging.info('Resuming the model traning')
+            model = tf.keras.models.load_model(model_path)
+        else:
+            logging.info('Building fresh model.')
+            max_len = self.model_cfg["max_len"]
+            model = Sequential(
+                [
+                    Embedding(total_words, self.model_cfg["embedding_dim"], input_length=max_len - 1),
+                    LSTM(self.model_cfg["lstm_units"], return_sequences=True),
+                    Dropout(self.model_cfg["dropout_rate"]),
+                    LSTM(self.model_cfg["lstm_units"]),
+                    Dense(total_words, activation="softmax"),
+                ]
+            )
         model.compile(
             loss="sparse_categorical_crossentropy",
-            optimizer=tf.keras.optimizers.Adam(learning_rate=self.model_cfg["learning_rate"]),
+            optimizer='adam',
             metrics=["accuracy"],
         )
         return model
 
     @handle_exception
     def train(self, train_seq: List[List[int]], val_seq: List[List[int]], total_words: int) -> Dict:
-        model = self.build_model(total_words=total_words)
+        
+        base_path = self.config["artifacts"]["model_dir"]
+        
+        model_path = base_path + '/' + self.config["artifacts"]["model_file_name"]
+        ensure_parent_dir(model_path)
+        history_path = base_path + '/' + self.config["artifacts"]["history_file_name"]
+        ensure_parent_dir(history_path)
+
+        model = self.build_model(total_words=total_words, model_path=model_path)
         max_len = self.model_cfg["max_len"]
         batch_size = self.model_cfg["batch_size"]
 
@@ -85,11 +101,9 @@ class ModelTrainer:
             verbose=1,
         )
 
-        os.makedirs(os.path.dirname(self.artifacts_cfg["model_path"]), exist_ok=True)
-        os.makedirs(os.path.dirname(self.artifacts_cfg["history_path"]), exist_ok=True)
-        model.save(self.artifacts_cfg["model_path"])
+        model.save(model_path)
         history_df = pd.DataFrame(history.history)
-        history_df.to_csv(self.artifacts_cfg["history_path"], index=False)
+        history_df.to_csv(history_path, index=False)
         logging.info("Model and history saved.")
 
         final_loss = float(history.history["val_loss"][-1])
@@ -108,7 +122,7 @@ class ModelTrainer:
         max_len = self.model_cfg["max_len"]
         batch_size = self.model_cfg["batch_size"]
         test_samples = self._count_samples(test_seq, max_len)
-        test_steps = max(1, test_samples // batch_size)
+        test_steps = math.ceil(test_samples / batch_size)
         loss, accuracy = model.evaluate(
             self.data_generator(test_seq, max_len, batch_size),
             steps=test_steps,
